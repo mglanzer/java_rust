@@ -1,0 +1,9 @@
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+wasm-pack.log
+/app-wasm/pkg/
+/app-wasm/target/
+/native-bindings/target/

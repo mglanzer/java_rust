@@ -1,0 +1,5 @@
+rootProject.name = 'java_rust'
+
+include 'java-rust-proto-ffi'
+include 'app-java'
+include 'java-protos'

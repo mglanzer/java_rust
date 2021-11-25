@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+
+import "google/protobuf/any.proto";
+
+package message_ffi;
+
+message MessageEnvelope {
+  google.protobuf.Any message = 1;
+}

@@ -1,0 +1,169 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.17'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'com.google.protobuf' version '0.8.17'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDir 'proto'
+        }
+    }
+}
+
+protobuf {
+    generatedFilesBaseDir = "java-protos/src/main/java/generated"
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.7.0'
+    }
+    plugins {
+        javalite {
+            // The codegen for lite comes as a separate artifact
+            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                // In most cases you don't need the full Java output
+                // if you use the lite output.
+                remove java
+            }
+            task.plugins {
+                javalite { }
+            }
+        }
+    }
+}
+
+task cargoBuildAll {
+    group = "rust"
+    doLast {
+        project.exec {
+            workingDir("rust-proto-ffi")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("rust-proto-ffi/native-bindings")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("rust-proto-ffi/app-wasm")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("app-rust/app-native")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("app-rust/app-wasm")
+            executable("cargo")
+            args(["build"])
+        }
+//        project.exec {
+//            workingDir("app-rust/app-wasm")
+//            executable("wasm-pack")
+//            args(["build"])
+//        }
+        project.copy { // Copy native lib for Java
+            from "rust-proto-ffi/native-bindings/target/debug/libnative_bindings.dylib"
+            into "java-rust-proto-ffi/src/main/resources"
+        }
+        project.copy { // Copy native lib for Java
+            from "app-rust/app-native/target/debug/libapp_native.dylib"
+            into "app-java/src/main/resources"
+        }
+    }
+}
+
+task cargoBuildApp {
+    group = "rust"
+    doLast {
+        project.exec {
+            workingDir("app-rust/app-native")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("app-rust/app-wasm")
+            executable("cargo")
+            args(["build"])
+        }
+        project.exec {
+            workingDir("app-rust/app-wasm")
+            executable("wasm-pack")
+            args(["build"])
+        }
+        project.copy { // Copy native lib for Java
+            from "app-rust/app-native/target/debug/libapp_native.dylib"
+            into "app-java/src/main/resources"
+        }
+    }
+}
+
+task installPbJs {
+    group "install"
+    description "Installs protobufjs, pbjs command line util. Used to generate JS from .proto"
+    doLast {
+        project.exec {
+            workingDir("app-www")
+            executable("npm")
+            args(["install", "protobufjs", "-g"])
+        }
+    }
+}
+
+task generateProtosAll {
+    group "generate_proto"
+    dependsOn("generateProto")
+    doLast {
+        // rust protos are build via build.rs during `cargo build`
+
+        // javascript protos
+        project.exec {
+            workingDir("app-www")
+            executable("pbjs")
+            args(["-t", "static-module", "-w", "es6", "-o", "generated/message_ffi.js", "../proto/message_ffi.proto"])
+        }
+        project.exec {
+            workingDir("app-www")
+            executable("pbjs")
+            args(["-t", "static-module", "-w", "es6", "-o", "generated/commands.js", "../proto/commands.proto"])
+        }
+    }
+}
+
+task startWeb {
+    group = "app-www"
+    doLast {
+        project.exec {
+            workingDir("app-www")
+            executable("npm")
+            args(["start"])
+        }
+    }
+}

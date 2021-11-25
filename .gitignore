@@ -1,0 +1,15 @@
+build/
+app-java/build/
+app-rust/target/
+app-rust/app-native/target/
+app-rust/app-wasm/target/
+app-rust/app-wasm/pkg/
+java-rust-proto-ffi/build/
+.idea
+.gradle
+rust-proto-ffi/target/
+rust-proto-ffi/copied_protos/
+rust-proto-ffi/native-bindings/target/
+rust-proto-ffi/app-wasm/target/
+rust-proto-ffi/app-wasm/pkg/
+app-www/node_modules/
